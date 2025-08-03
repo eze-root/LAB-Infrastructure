@@ -22,7 +22,7 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 class RemoteServer:
-    def __init__(self, host, user, private_key, ssh_port, local_port, remote_port, name):
+    def __init__(self, host, user, private_key, ssh_port, local_port, remote_port, name, has_gpu=None):
         self.host = host
         self.user = user
         self.port = ssh_port
@@ -31,7 +31,7 @@ class RemoteServer:
         self.remote_port = remote_port
         self.name = name
         self.os_arch = None
-        self.has_gpu = False
+        self.has_gpu = has_gpu
 
     def get_exporter_for_running(self):
         if self.has_gpu:
@@ -39,14 +39,16 @@ class RemoteServer:
         else:
             return ['node_exporter']
 
+    @classmethod
     def download_latest_exporter(cls, os_arch):
         if not os.path.exists('./exporter'):
             os.makedirs('./exporter', exist_ok=True)
-        cls.download_clash_exporter(os_arch)
         cls.download_node_exporter(os_arch)
         cls.download_nvidia_gpu_exporter(os_arch)
         logger.info("All exporters downloaded successfully.")
        
+
+    @classmethod
     def download_clash_exporter(cls, arch='linux-amd64'):
         shell_script = "bash ./bash_scripts/download_clash_exporter.sh"
         if arch.find('darwin') > -1:
@@ -63,6 +65,7 @@ class RemoteServer:
             raise RuntimeError(f"Failed to install clash exporter: {res.stderr}")
         logger.info(f"Clash exporter installed successfully for {arch} architecture.")
 
+    @classmethod
     def download_node_exporter(cls, arch='linux-amd64'):
         shell_script = "bash ./bash_scripts/download_node_exporter.sh"
         if arch.find('darwin') > -1:
@@ -78,6 +81,7 @@ class RemoteServer:
             raise RuntimeError(f"Failed to install clash exporter: {res.stderr}")
         logger.info(f"Node exporter installed successfully for {arch} architecture.")
 
+    @classmethod
     def download_nvidia_gpu_exporter(cls, arch='linux-amd64'):
         shell_script = "bash ./bash_scripts/download_nvidia_gpu_exporter.sh"
         if arch.find('linux') > -1:
@@ -93,7 +97,7 @@ class RemoteServer:
 
     async def upload_exporter(self):
         async with asyncssh.connect(
-            self.host, port=self.port, username=self.user, client_keys=[self.private_key]
+            self.host, port=self.port, known_hosts=None, username=self.user, client_keys=[self.private_key]
         ) as conn:
             await conn.run('mkdir -p /tmp/exporter', check=True)
             for exporter in self.get_exporter_for_running():
@@ -130,7 +134,7 @@ class RemoteServer:
 
     async def check_and_start_exporter(self):
         async with asyncssh.connect(
-            self.host, port=self.port, username=self.user, client_keys=[self.private_key]
+            self.host, port=self.port, username=self.user, known_hosts=None, client_keys=[self.private_key]
         ) as conn:
             for ind, exporter in enumerate(self.get_exporter_for_running()):
                 # 1. 检查是否已运行
@@ -195,10 +199,12 @@ async def main():
             remote_port=server_cfg.get("remote_port", 9100),
             local_port=server_cfg["local_port"],
             name=server_cfg.get("name", f'{server_cfg["user"]}@{server_cfg["host"]}'),
+            has_gpu=server_cfg.get("has_gpu", None),
         )
         os_arch = await server.get_remote_os()
         os_archs.append(os_arch)
         servers.append(server)
+
 
     task = [server.run() for server in servers]
     await asyncio.gather(*task)
