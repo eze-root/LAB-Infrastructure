@@ -1,0 +1,23 @@
+[[servers]]
+name = "gjt"
+host = "192.168.123.12"
+user = "admin"
+ssh_port = 22222
+local_port = 19110
+remote_port = 19110
+
+[[servers]]
+name = "m2"
+host = "localhost"
+user = "dxc"
+ssh_port = 22
+local_port = 19120
+remote_port = 19120
+
+[[servers]]
+name = "win11-wsl"
+host = "gjt.utai.ltd"
+user = "hxh"
+ssh_port = 25090
+local_port = 19130
+remote_port = 19130
