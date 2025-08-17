@@ -5,7 +5,13 @@
 ARCH=${1:-linux-amd64} 
 OUTDIR="exporter/clash_exporter"
 TARGET="${ARCH}"
+TARGET_BIN="$OUTDIR/$ARCH/clash_exporter"
 echo "Downloading Clash Exporter for target: $TARGET"
+
+if [[ -x "$TARGET_BIN" ]]; then
+  log "Binary already exists: $TARGET_BIN (skip download)"
+  exit 0
+fi
 
 if [ ! -d "$OUTDIR" ]; then
   mkdir -p "$OUTDIR"
@@ -28,5 +34,5 @@ tar -xzf "$OUTDIR/$FILENAME" -C "$OUTDIR/$ARCH"
 rm "$OUTDIR/$FILENAME"
 BIN_PATH=$(find "$OUTDIR"  -type f -name 'clash-exporter*' | head -n1)
 echo "Binary path: $BIN_PATH"
-mv $BIN_PATH "$OUTDIR/$ARCH/clash_exporter"
-chmod +x "$OUTDIR/$ARCH/clash_exporter"
+mv -f "$BIN_PATH" "$TARGET_BIN"
+chmod +x "$TARGET_BIN"

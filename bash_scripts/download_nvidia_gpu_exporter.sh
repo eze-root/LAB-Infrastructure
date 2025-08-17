@@ -4,15 +4,19 @@
 
 ARCH=${1:-linux_x86_64}
 OUTDIR="exporter/nvidia_gpu_exporter"
+if [[ "$ARCH" == "linux_x86_64" ]]; then
+  ARCH="linux-amd64"
+fi
 TARGET="${ARCH}"
-echo "Downloading Nvidia GPU Exporter for target: $TARGET"
+TARGET_BIN="$OUTDIR/$ARCH/nvidia_gpu_exporter"
+
+if [[ -x "$TARGET_BIN" ]]; then
+  echo "Binary already exists: $TARGET_BIN (skip download)"
+  exit 0
+fi
 
 if [ ! -d "$OUTDIR" ]; then
   mkdir -p "$OUTDIR"
-fi
-
-if [[ "$ARCH" == "linux_x86_64" ]]; then
-  ARCH="linux-amd64"
 fi
 
 if [ ! -d "$OUTDIR/$ARCH" ]; then
@@ -31,4 +35,4 @@ FILENAME=$(basename "$URL")
 curl -L -o "$OUTDIR/$FILENAME" "$URL"
 tar -xzf "$OUTDIR/$FILENAME" -C "$OUTDIR/$ARCH" 
 rm "$OUTDIR/$FILENAME"
-chmod +x "$OUTDIR/$ARCH/nvidia_gpu_exporter"
+chmod +x "$TARGET_BIN"

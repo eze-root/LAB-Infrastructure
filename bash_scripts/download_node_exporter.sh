@@ -5,7 +5,12 @@
 ARCH=${1:-linux-amd64} 
 OUTDIR="exporter/node_exporter"
 TARGET="${ARCH}"
-echo "Downloading Node Exporter for target: $TARGET"
+TARGET_BIN="$OUTDIR/$ARCH/node_exporter"
+
+if [[ -x "$TARGET_BIN" ]]; then
+  echo "Binary already exists: $TARGET_BIN (skip download)"
+  exit 0
+fi
 
 if [ ! -d "$OUTDIR" ]; then
   mkdir -p "$OUTDIR"
@@ -27,4 +32,4 @@ FILENAME=$(basename "$URL")
 curl -L -o "$OUTDIR/$FILENAME" "$URL"
 tar -xzf "$OUTDIR/$FILENAME" -C "$OUTDIR/$ARCH" --strip-components=1
 rm "$OUTDIR/$FILENAME"
-chmod +x "$OUTDIR/$ARCH/node_exporter"
+chmod +x "$TARGET_BIN"
